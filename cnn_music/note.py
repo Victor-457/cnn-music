@@ -1,10 +1,10 @@
-from typing import List, Dict, Union
-from music21 import note, chord
-from music21.note import Note
-from music21.chord import Chord
-import glob
-
 from music21 import converter, instrument
+from music21 import note, chord
+from music21.chord import Chord
+from music21.note import Note
+from typing import List, Dict, Union
+import glob
+from fractions import Fraction
 
 
 def get_notes_info(data_path: str):
@@ -27,25 +27,14 @@ def get_notes_info(data_path: str):
             notes_to_parse = midi.flat.notes
         for element in notes_to_parse:
             if isinstance(element, note.Note):
-                print('ADDNOTE')
+                #print('ADDNOTE')
                 notes_info['notes'].append(str(element.pitch))
                 notes_info['offsets'].append(element.offset)
             elif isinstance(element, chord.Chord):
-                print('ADDNOTE')
-                """
-                notes.append(
-                    (".".join(str(n) for n in element.normalOrder), element.offset)
-                )
-                """
                 notes_info['notes'].append(".".join(str(n) for n in element.normalOrder))
                 notes_info['offsets'].append(element.offset)
-            else:
-                print('elementFALHA-------------')
-                print(element)
-                print('-------------')
-            print('OFFSETADD')
+    
     return notes_info
-
 
 def get_notes(data_path: str) -> List[str]:
     """
@@ -71,6 +60,8 @@ def get_notes(data_path: str) -> List[str]:
                 notes.append(str(element.pitch))
             elif isinstance(element, chord.Chord):
                 notes.append(".".join(str(n) for n in element.normalOrder))
+            else:
+                continue
     return notes
 
 
@@ -90,9 +81,28 @@ def get_int_notes(pitchnames: List[str], notes: List[str]) -> List[int]:
 
     :return: List of integers representing the notes  
     """
-    note_to_int = dict((note, number) for number, note in enumerate(pitchnames))
-    return [note_to_int[char] for char in notes]
-
+    note_to_int = dict((note, number) for number, note in enumerate(pitchnames));
+    list_int = []
+    for char in notes:
+        try:
+            list_int.append(note_to_int[char] )
+        except:
+            try:
+                nota = note.Note(char)              
+                try:
+                    charTemp = nota.pitch.getEnharmonic()
+                    list_int.append(note_to_int[chartemp] )
+                except:
+                    try:
+                        charTemp = nota.pitch.getLowerEnharmonic()
+                        list_int.append(note_to_int[chartemp] )
+                    except:
+                        print("Nota nao encontrada")
+                        continue
+            except:
+                print("Acorde nao encontrado")
+                continue
+    return list_int
 
 def get_notes_chords_list(
     note_strings: List[str], offset_between: float
@@ -140,7 +150,7 @@ def get_notes_chords_list_offset(
     output = []
 
     for pattern, offset in zip(note_strings, offsets):
-        print(offset)
+        #print(offset)
         if ("." in pattern) or pattern.isdigit():
             notes_in_chord = pattern.split(".")
             notes = []
